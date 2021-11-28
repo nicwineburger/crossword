@@ -157,17 +157,17 @@ def generate(in_file, out_file, ceiling):
 
     if ceiling == 0:
         # Pick an appropriate y-axis, balancing being robust to outliers vs. showing all data
-        ymax = df["solve_time_secs"].quantile(0.99) / 60
+        ymax = df["solve_time_secs"].max() / 60
     else:
         ymax = ceiling
 
     save_plot(df, out_file, ymax)
 
-    out_name = "%s Violin Plot%s" % os.path.splitext(out_file)
-    save_vln_plot(df, out_name, ymax)
+    #out_name = "%s Violin Plot%s" % os.path.splitext(out_file)
+    #save_vln_plot(df, out_name, ymax)
 
-    out_name = "%s Split Violin Plot%s" % os.path.splitext(out_file)
-    save_split_vln_plot(df, out_name, ymax)
+    #out_name = "%s Split Violin Plot%s" % os.path.splitext(out_file)
+    #save_split_vln_plot(df, out_name, ymax)
 
     # TODO: a ridge plot may be fun to try too:
     # https://seaborn.pydata.org/examples/kde_ridgeplot.html
