@@ -14,74 +14,63 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-HTTP server intended to be containerized, deployed to Google Cloud Run, and scheduled to run
-regularly.
-
-At each invocation:
-1. The crossword database (CSV file) is fetched from Cloud Storage
-2. The database is refreshed using a Rust program to pull data from NYT
-3. The changes are pushed to Cloud Storage
-4. A plot is generated and pushed to a Cloud Storage
+Lambda intended to be containerized.
 """
 
 import os
 import subprocess
-from flask import Flask
-from google.cloud import storage
+import sys
 import plot.plot as plot
+import base64
+import json
 
-app = Flask(__name__)
-
-# Filename for stats CSV file in Cloud Storage bucket
-CLOUD_CSV_FILENAME = "data.csv"
 # Filename for stats CSV file on local fileystem
-LOCAL_CSV_FILENAME = "data.csv"
-# Filename for output plot in Cloud Storage bucket
-CLOUD_PLOT_FILENAME = "plot.svg"
+LOCAL_CSV_FILENAME = "/tmp/data.csv"
 # Filename for output plot on local fileystem
-LOCAL_PLOT_FILENAME = "plot.svg"
-
-
-def download_csv(bucket):
-    blob = bucket.blob(CLOUD_CSV_FILENAME)
-    blob.download_to_filename(LOCAL_CSV_FILENAME)
-
-
-def upload_csv(bucket):
-    blob = bucket.blob(CLOUD_CSV_FILENAME)
-    blob.upload_from_filename(LOCAL_CSV_FILENAME)
-
-
-def upload_plot(bucket):
-    blob = bucket.blob(CLOUD_PLOT_FILENAME)
-    blob.upload_from_filename(LOCAL_PLOT_FILENAME)
-
+LOCAL_PLOT_FILENAME = "/tmp/plot.svg"
 
 def generate_plot():
-    plot.generate(LOCAL_CSV_FILENAME, LOCAL_PLOT_FILENAME)
+    plot.generate(LOCAL_CSV_FILENAME, LOCAL_PLOT_FILENAME, 0)
+    with open(LOCAL_PLOT_FILENAME, "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read())
+        return encoded_string
 
+# date example: "2021-11-01"
+def update_csv(auth_key, earliest_date):
+    print("running rust!")
+    subprocess.run(["crossword", "--start-date", earliest_date, "-t", auth_key, LOCAL_CSV_FILENAME], check=True)
+    print("done running rust!")
 
-def update_csv():
-    subprocess.run(["crossword", LOCAL_CSV_FILENAME], check=True)
+def reset_csv():
+    print('resetting csv')
+    try:
+        os.remove(LOCAL_CSV_FILENAME)
+    except OSError:
+        pass
+    open(LOCAL_CSV_FILENAME, "a").close()
 
+def update_database_and_plot(auth_key, earliest_date):
+    reset_csv()
+    update_csv(auth_key, earliest_date)
+    return { "content": generate_plot() }
 
-@app.route("/")
-def update_database_and_plot():
-    storage_client = storage.Client()
-    db_bucket_name = os.environ["DB_BUCKET_NAME"]
-    db_bucket = storage_client.bucket(db_bucket_name)
+def message(message_in):
+    return { "message": message_in }
 
-    download_csv(db_bucket)
-    update_csv()
-    upload_csv(db_bucket)
-    generate_plot()
+def lambda_handler(event, context):
+    try:
+        print('Hello from AWS Lambda using Python' + sys.version + '!')
 
-    plot_bucket_name = os.environ["PLOT_BUCKET_NAME"]
-    plot_bucket = storage_client.bucket(plot_bucket_name)
-    upload_plot(plot_bucket)
+        body = event.get('body', None)
+        if not body:
+            return message("no body available")
+        body_json = json.loads(body)
+        auth_key = body_json.get('auth_key', None)
+        earliest_date = body_json.get('earliest_date', None)
+        if not auth_key or not earliest_date:
+            return message("auth key or date not provided")
 
-    return "Success!"
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+        return update_database_and_plot(auth_key, earliest_date)
+    except Exception as e:
+        print("encountered error: " + str(e))
+        return message("sorry, something went wrong")

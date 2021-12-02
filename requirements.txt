@@ -1,7 +1,2 @@
-google-cloud-storage
-
-# Web server
-Flask
-gunicorn
 
 -r plot/requirements.txt

@@ -141,7 +141,7 @@ def save_split_vln_plot(df, out_path, ymax):
     # TODO: should probably not hard-code 2021 and instead pass in a date.
     df['In 2021'] = df['Solved datetime'] > datetime.datetime(2021, 1, 1)
     ax = sns.violinplot(x="weekday", y="solve_time_m", hue='In 2021',
-                        split=True, data=df, bw=.25, order=DAYS)
+                        split=False, data=df, bw=.25, order=DAYS)
 
     date = max(df['Solved datetime']).strftime("%b %d, %Y")
     ax.set_title("%d NYT Crossword Solve Times by Day of Week as of %s" % (len(df), date))
