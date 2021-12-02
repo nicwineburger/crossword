@@ -78,10 +78,16 @@ def save_plot(df, out_path, ymax):
         f"NYT crossword solve time (8-week rolling average) as of {today}"
     )
     ax = fig.gca()
+    
+    CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
+                      '#f781bf', '#a65628', '#984ea3',
+                      '#999999', '#e41a1c', '#dede00']
+    color_index = 0
+    
     for day in DAYS:
         rolling_avg = df[df["weekday"] == day]["solve_time_secs"].rolling("56D").mean()
         (rolling_avg / 60.0).plot(
-            ax=ax, label=day, linewidth=2, markersize=4, marker="o", linestyle="-"
+            ax=ax, label=day, linewidth=2, markersize=4, marker="o", linestyle="-", color=CB_color_cycle[color_index]
         )
     plt.legend()
 
@@ -92,6 +98,7 @@ def save_plot(df, out_path, ymax):
     ax.set_yticks(minor_yticks, minor=True)
 
     plt.xticks(rotation=0)
+    ax.figure.autofmt_xdate()
 
     plt.grid(True, which="both", axis="both")
     plt.savefig(out_path)
@@ -115,7 +122,7 @@ def save_vln_plot(df, out_path, ymax):
 
     ax.set_ylim(0, ymax + 5)
     ax.set_yticks(np.arange(0, ymax, 5))
-
+    
     ax.get_legend().remove()
     plt.savefig(out_path)
     plt.close()
