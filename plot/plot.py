@@ -89,6 +89,7 @@ def save_plot(df, out_path, ymax):
         (rolling_avg / 60.0).plot(
             ax=ax, label=day, linewidth=2, markersize=4, marker="o", linestyle="-", color=CB_color_cycle[color_index]
         )
+        color_index += 1
     plt.legend()
 
     ax.set_xlabel("Solve Date")
