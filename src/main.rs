@@ -39,7 +39,7 @@ struct Opt {
     #[structopt(
         short = "q",
         long = "quota",
-        default_value = "1",
+        default_value = "10",
         env = "NYT_REQUESTS_PER_SEC"
     )]
     request_quota: NonZeroU32,
