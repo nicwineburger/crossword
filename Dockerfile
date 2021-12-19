@@ -32,7 +32,7 @@ RUN python3.9 -m pip install --no-cache-dir -r requirements.txt --target /home/a
 RUN python3.9 -m pip install awslambdaric --target /home/app/
 
 # Stage 3 - final runtime image
-# Grab a fresh copy of the Python image
+# Grab a fresh copy of the Python image 
 FROM python-slim
 # Include global arg in this stage of the build
 # Set working directory to function root directory
