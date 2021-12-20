@@ -35,11 +35,15 @@ struct Opt {
     #[structopt(short, long, env = "NYT_XWORD_START")]
     start_date: NaiveDate,
 
+    /// Latest puzzle date to pull results from in YYYY-MM-DD format
+    #[structopt(short, long, env = "NYT_XWORD_END")]
+    end_date: NaiveDate,
+
     /// Rate-limit (per second) for outgoing requests
     #[structopt(
         short = "q",
         long = "quota",
-        default_value = "100",
+        default_value = "5",
         env = "NYT_REQUESTS_PER_SEC"
     )]
     request_quota: NonZeroU32,
@@ -56,7 +60,6 @@ async fn main() -> Result<()> {
     pretty_env_logger::init();
     let opt = Opt::from_args();
 
-    let today = chrono::offset::Utc::today().naive_utc();
     let stats_db = if opt.db_path.exists() {
         Database::from_file(opt.db_path)
             .expect("Given file exists but does not contain a valid database")
@@ -67,7 +70,7 @@ async fn main() -> Result<()> {
     let missing_ids = crossword::get_days_without_ids_chunked(
         &stats_db,
         opt.start_date,
-        today,
+        opt.end_date,
         Duration::days(DAY_STEP),
     );
     let cached_unsolved = crossword::get_cached_unsolved_records(&stats_db, opt.start_date);
