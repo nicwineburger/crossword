@@ -1,5 +1,1 @@
-# Specific version numbers probably don't really matter but these are known to work
-numpy>=1.21.1
-pandas>=1.3.0
-seaborn>=0.11.1
-matplotlib>=3.4.2
+

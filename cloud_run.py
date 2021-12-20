@@ -20,20 +20,10 @@ Lambda intended to be containerized.
 import os
 import subprocess
 import sys
-import plot.plot as plot
-import base64
 import json
 
 # Filename for stats CSV file on local fileystem
 LOCAL_CSV_FILENAME = "/tmp/data.csv"
-# Filename for output plot on local fileystem
-LOCAL_PLOT_FILENAME = "/tmp/plot.svg"
-
-def generate_plot():
-    plot.generate(LOCAL_CSV_FILENAME, LOCAL_PLOT_FILENAME, 0)
-    with open(LOCAL_PLOT_FILENAME, "rb") as image_file:
-        encoded_string = base64.b64encode(image_file.read())
-        return encoded_string
 
 # date example: "2021-11-01"
 def update_csv(auth_key, earliest_date):
@@ -49,10 +39,11 @@ def reset_csv():
         pass
     open(LOCAL_CSV_FILENAME, "a").close()
 
-def update_database_and_plot(auth_key, earliest_date):
+def update_database(auth_key, earliest_date):
     reset_csv()
     update_csv(auth_key, earliest_date)
-    return { "content": generate_plot() }
+    with open(LOCAL_CSV_FILENAME, 'r') as csv:
+        return { "content": csv.read() }
 
 def message(message_in):
     return { "message": message_in }
@@ -70,7 +61,7 @@ def lambda_handler(event, context):
         if not auth_key or not earliest_date:
             return message("auth key or date not provided")
 
-        return update_database_and_plot(auth_key, earliest_date)
+        return update_database(auth_key, earliest_date)
     except Exception as e:
         print("encountered error: " + str(e))
         return message("sorry, something went wrong")
