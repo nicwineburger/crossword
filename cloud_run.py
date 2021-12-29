@@ -21,6 +21,7 @@ import os
 import subprocess
 import sys
 import json
+import re
 
 # Filename for stats CSV file on local fileystem
 LOCAL_CSV_FILENAME = "/tmp/data.csv"
@@ -49,6 +50,9 @@ def update_database(auth_key, earliest_date, end_date):
 def message(message_in):
     return { "message": message_in }
 
+def is_valid_date(date):
+    return re.search("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", date) is not None
+
 def lambda_handler(event, context):
     try:
         print('Hello from AWS Lambda using Python' + sys.version + '!')
@@ -62,6 +66,8 @@ def lambda_handler(event, context):
         end_date = body_json.get('end_date', None)
         if not auth_key or not earliest_date or not end_date:
             return message("auth key or date not provided")
+        if not is_valid_date(earliest_date) or not is_valid_date(end_date):
+            return message("invalid date provided")
 
         return update_database(auth_key, earliest_date, end_date)
     except Exception as e:
